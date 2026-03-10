@@ -1,0 +1,26 @@
+# Local configs (never commit real paths / keys)
+*.local.json
+
+# Logs and runtime outputs
+logs/
+outputs/
+data/
+gui/backend/assets/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Checkpoints / large artifacts
+*.ckpt
+*.pt
+*.safetensors
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
