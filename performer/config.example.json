@@ -1,0 +1,23 @@
+{
+    "avatar_image": {
+        "backend": "gpt-4o-image",
+        "api_key": "your-api-key-here",
+        "api_base": null,
+        "model": "gpt-image-1"
+    },
+    "tts": {
+        "engine": "emotivoice",
+        "repo_path": "/path/to/EmotiVoice",
+        "python_bin": "python",
+        "speaker": "8051"
+    },
+    "video": {
+        "engine": "omniavatar",
+        "repo_path": "/path/to/OmniAvatar",
+        "python_bin": "python",
+        "config": "configs/inference.yaml",
+        "num_steps": 25,
+        "guidance_scale": 4.5,
+        "audio_scale": 3.0
+    }
+}

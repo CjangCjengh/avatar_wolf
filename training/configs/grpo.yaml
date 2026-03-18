@@ -1,0 +1,62 @@
+# GRPO + LoRA recipe for the CaM-Wolf Reasoner (Qwen2.5-72B-Instruct).
+#
+# Based on verl's GRPO example (verl/trainer/config/ppo_trainer.yaml).
+# Run from the repository root, e.g.:
+#
+#   INTERVENTION_API_BASE=http://127.0.0.1:8001/v1 \
+#   python -m verl.trainer.main_ppo \
+#       --config-path training/configs --config-name grpo
+#
+# group size 8, clip eps 0.2, KL beta 0.04,
+# total batch size 128, LoRA rank 16, lr 1e-6, 2 epochs.
+
+data:
+  train_files: /path/to/grpo_train_data.parquet
+  val_files: /path/to/grpo_train_data.parquet  # replace with a held-out split
+  train_batch_size: 128
+  max_prompt_length: 8192
+  max_response_length: 2048
+  filter_overlong_prompts: true
+  truncation: error
+
+actor_rollout_ref:
+  model:
+    path: /path/to/Qwen2.5-72B-Instruct
+    lora_rank: 16
+    lora_alpha: 32
+    target_modules: all-linear
+    enable_gradient_checkpointing: true
+  actor:
+    strategy: fsdp
+    optim:
+      lr: 1.0e-6
+    ppo_mini_batch_size: 128
+    use_kl_loss: true
+    kl_loss_coef: 0.04
+    kl_loss_type: low_var_kl
+    clip_ratio: 0.2
+  rollout:
+    name: vllm
+    n: 8                     # GRPO group size G
+    temperature: 1.0
+    gpu_memory_utilization: 0.6
+  ref:
+    log_prob_micro_batch_size_per_gpu: 8
+
+algorithm:
+  adv_estimator: grpo
+  norm_adv_by_std_in_grpo: true
+
+custom_reward_function:
+  path: training/rewards/verl_reward.py
+  name: compute_score
+
+trainer:
+  total_epochs: 2
+  nnodes: 1
+  n_gpus_per_node: 8
+  save_freq: -1
+  val_before_train: false
+  logger: [console]
+  project_name: camwolf
+  experiment_name: grpo

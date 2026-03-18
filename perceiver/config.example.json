@@ -1,0 +1,16 @@
+{
+    "model_path": "/path/to/Qwen2.5-Omni-7B",
+    "serve": {
+        "served_name": "Qwen/Qwen2.5-Omni-7B",
+        "api_base": "http://127.0.0.1:8003/v1",
+        "api_key": "EMPTY",
+        "port": 8003,
+        "max_model_len": 8192,
+        "limit_mm_per_prompt": "{\"video\": 1}"
+    },
+    "max_new_tokens": 512,
+    "prompt": {
+        "speech_transcription": "This is a video of a player speaking during a social deduction game (Werewolf). Transcribe the player's speech content exactly once. Output only the transcription, no repetition, no commentary.",
+        "vision_description": "This is a video of a player speaking during a social deduction game (Werewolf). Describe the player's facial expressions, gestures, and body language in at most 60 words. Output only the description."
+    }
+}

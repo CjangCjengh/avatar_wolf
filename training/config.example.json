@@ -1,0 +1,35 @@
+{
+    "data": {
+        "self_play_game_logs": "/path/to/game_logs",
+        "num_games": 500,
+        "num_speaking_turns": 3000,
+        "train_data": "/path/to/grpo_train_data.jsonl"
+    },
+    "policy": {
+        "model_path": "/path/to/Qwen2.5-72B-Instruct",
+        "lora_rank": 16,
+        "learning_rate": 1e-06
+    },
+    "grpo": {
+        "group_size": 8,
+        "clip_eps": 0.2,
+        "kl_beta": 0.04,
+        "total_batch_size": 128,
+        "epochs": 2
+    },
+    "intervention": {
+        "model_path": "/path/to/Qwen2.5-14B-Instruct",
+        "served_name": "Qwen/Qwen2.5-14B-Instruct",
+        "api_base": "http://127.0.0.1:8001/v1",
+        "api_key": "EMPTY",
+        "max_parallel": 32
+    },
+    "reward": {
+        "correct": 1.0,
+        "incorrect": -1.0,
+        "faith_relevant_penalty_per_premise": "-1/|P_i|",
+        "faith_irrelevant_penalty": -0.5,
+        "format_penalty": -1.0,
+        "repeat_penalty": -1.0
+    }
+}
