@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CaM-Wolf</title>
+    <link rel="stylesheet" href="static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2.2rem;
+            margin-top: 2.5rem;
+        }
+        .tilt-card {
+            perspective: 1200px;
+        }
+        .tilt-inner {
+            position: relative;
+            border-radius: 18px;
+            overflow: hidden;
+            background: #0d1020;
+            border: 1px solid rgba(140, 160, 255, 0.25);
+            box-shadow: 0 24px 60px rgba(10, 14, 40, 0.55),
+                        0 0 0 rgba(120, 150, 255, 0.0);
+            transform-style: preserve-3d;
+            transition: box-shadow 0.35s ease, border-color 0.35s ease;
+            will-change: transform;
+        }
+        .tilt-inner::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(600px circle at var(--mx, 50%) var(--my, 50%),
+                                        rgba(150, 175, 255, 0.16), transparent 45%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.35s ease;
+        }
+        .tilt-card:hover .tilt-inner {
+            border-color: rgba(150, 175, 255, 0.55);
+            box-shadow: 0 34px 80px rgba(10, 14, 40, 0.7),
+                        0 0 42px rgba(120, 150, 255, 0.18);
+        }
+        .tilt-card:hover .tilt-inner::after { opacity: 1; }
+        .tilt-inner video {
+            display: block;
+            width: 100%;
+            height: 430px;
+            object-fit: contain;
+            background: #000;
+            transform: translateZ(30px) scale(1.02);
+        }
+        .tilt-caption {
+            margin-top: 1rem;
+            text-align: center;
+            color: var(--text-secondary, #9aa3c0);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        .tilt-caption strong { color: var(--text-primary, #e8ecff); display: block; font-size: 1.02rem; margin-bottom: 0.25rem; }
+        .play-hint {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(8, 10, 24, 0.35);
+            opacity: 1;
+            transition: opacity 0.3s ease;
+            cursor: pointer;
+        }
+        .play-hint.hidden { opacity: 0; pointer-events: none; }
+        .play-hint i {
+            font-size: 3rem;
+            color: rgba(235, 240, 255, 0.92);
+            text-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+        }
+        @media (max-width: 640px) {
+            .tilt-inner video { height: 320px; }
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar" id="navbar">
+    <div class="nav-container">
+        <a href="#" class="nav-logo">CaM-Wolf</a>
+        <div class="nav-links">
+            <a href="#abstract" class="nav-link">Abstract</a>
+            <a href="#motivation" class="nav-link">Motivation</a>
+            <a href="#method" class="nav-link">Method</a>
+            <a href="#demos" class="nav-link">Demos</a>
+            <a href="#citation" class="nav-link">BibTeX</a>
+        </div>
+    </div>
+</nav>
+<canvas id="starry-bg"></canvas>
+<section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-orb hero-orb-1"></div>
+    <div class="hero-orb hero-orb-2"></div>
+    <div class="hero-orb hero-orb-3"></div>
+    <div class="container">
+        <h1 class="hero-title">CaM-Wolf: Causal-Aware Multimodal Agents for Social Deduction Games</h1>
+        <p class="hero-authors">
+            Zheng Zhang &nbsp;·&nbsp; Nanjie Yao &nbsp;·&nbsp; Jiarui He &nbsp;·&nbsp; Deheng Ye &nbsp;·&nbsp; Peilin Zhao &nbsp;·&nbsp; Hao Wang
+        </p>
+        <p class="hero-affiliation">The Hong Kong University of Science and Technology (Guangzhou) &nbsp;·&nbsp; Nanyang Technological University &nbsp;·&nbsp; Shanghai Jiao Tong University</p>
+        <div class="hero-links">
+            <a href="https://openreview.net/forum?id=djnKfsiN3p" class="btn btn-primary" target="_blank">
+                <i class="fas fa-file-alt"></i> Paper
+            </a>
+            <a href="https://github.com/CjangCjengh/avatar_wolf" class="btn btn-secondary" target="_blank">
+                <i class="fab fa-github"></i> Code
+            </a>
+        </div>
+    </div>
+</section>
+<section class="section" id="abstract">
+    <div class="container">
+        <h2 class="section-title reveal">Abstract</h2>
+        <div class="abstract-text reveal">
+            <p>
+                Social deduction games (SDGs) such as Werewolf have become challenging testbeds for AI agents, requiring complex social skills such as reasoning, deception, and collaboration. While recent advances in large language models (LLMs) have driven significant progress in SDG agents, current approaches are predominantly text-based, overlooking the <strong>multimodal nature</strong> that is fundamental to human social interaction.
+            </p>
+            <p>
+                To bridge this gap, we introduce <strong>CaM-Wolf</strong>, the first SDG agent that integrates multimodal perception and generation. CaM-Wolf processes video inputs from other players, employs a <strong>causal-aware Reasoner</strong> trained via reinforcement learning to establish logical chains between observable behaviors and hidden roles, and presents itself through an <strong>animated avatar</strong>. Our experiments and user study show that CaM-Wolf achieves superior gameplay performance and enhances the quality of human-AI interaction, representing a significant advancement towards more human-like AI agents capable of participating in nuanced social dynamics.
+            </p>
+        </div>
+    </div>
+</section>
+<section class="section section-alt" id="motivation">
+    <div class="container">
+        <h2 class="section-title reveal">Motivation</h2>
+        <div class="motivation-layout reveal">
+            <div class="motivation-img">
+                <img src="static/images/motivation.png" alt="Interaction paradigms comparison">
+            </div>
+            <div class="motivation-text">
+                <h3>From Text to Multimodal Interaction</h3>
+                <p>Existing SDG agents are constrained to purely textual information: humans must type their statements and read agents' responses on screen — a paradigm that diverges substantially from natural human communication.</p>
+                <p>CaM-Wolf captures human players' <strong>video input</strong> during their speeches — speech content, facial expressions, and gestures — and generates <strong>video responses</strong> through an animated avatar, enabling authentic multimodal social deduction.</p>
+            </div>
+        </div>
+    </div>
+</section>
+<section class="section" id="method">
+    <div class="container">
+        <h2 class="section-title reveal">Method</h2>
+
+        <div class="method-intro reveal">
+            <p>
+                CaM-Wolf consists of three modules that enable multimodal social deduction gameplay: a <strong>Perceiver</strong> that converts video inputs into structured text, a causal-aware <strong>Reasoner</strong> trained with counterfactual intervention rewards, and a <strong>Performer</strong> that presents responses through an animated avatar.
+            </p>
+        </div>
+
+        <div class="figure-container reveal">
+            <img src="static/images/framework.png" alt="CaM-Wolf framework" class="figure-img">
+            <p class="figure-caption">
+                <strong>The overall framework of CaM-Wolf.</strong> The Perceiver processes video inputs from human players, extracting transcribed speech text and vision descriptions. The Reasoner conducts causal-aware role identification and generates responses. The Performer presents the responses through an animated avatar.
+            </p>
+        </div>
+
+        <div class="figure-container reveal" style="margin-top: 3rem;">
+            <img src="static/images/causal_example.png" alt="Causal-aware training" class="figure-img">
+            <p class="figure-caption">
+                <strong>The Reasoner's training process.</strong> The Reasoner first generates structured reasoning with explicit premise-deduction-conclusion chains. Counterfactual premise intervention then removes relevant and irrelevant premises from the game log and re-infers the same player's role: if the conclusion changes, the removed premise is genuine causal evidence; otherwise it is spurious. Causal rewards computed from these interventions optimize the model with GRPO.
+            </p>
+        </div>
+
+        <div class="method-steps">
+            <div class="step-card reveal reveal-delay-1">
+                <div class="step-number">1</div>
+                <h3>Perceiver</h3>
+                <p>Converts video inputs from human players into speech transcriptions and vision descriptions (facial expressions, gestures) with Qwen2.5-Omni, building a structured multimodal game log.</p>
+            </div>
+            <div class="step-card reveal reveal-delay-2">
+                <div class="step-number">2</div>
+                <h3>Reasoner</h3>
+                <p>Generates explicit premise-deduction-conclusion role identifications, trained via GRPO with counterfactual premise-intervention rewards for faithful, evidence-grounded reasoning.</p>
+            </div>
+            <div class="step-card reveal reveal-delay-3">
+                <div class="step-number">3</div>
+                <h3>Performer</h3>
+                <p>Synthesizes expressive speech with EmotiVoice and renders a talking-avatar video with OmniAvatar, delivering natural and immersive multimodal responses.</p>
+            </div>
+        </div>
+    </div>
+</section>
+<section class="section section-alt" id="demos">
+    <div class="container">
+        <h2 class="section-title reveal">Demos</h2>
+        <div class="demo-grid">
+            <div class="tilt-card reveal reveal-delay-1">
+                <div class="tilt-inner">
+                    <video src="static/videos/human_vs_agent.mp4" muted loop playsinline preload="metadata"></video>
+                    <div class="play-hint" onclick="togglePlay(this)"><i class="fas fa-play"></i></div>
+                </div>
+                <p class="tilt-caption"><strong>Human vs. Agents</strong>A human player speaks via video; agents perceive speech, expressions, and gestures, then respond through animated avatars.</p>
+            </div>
+            <div class="tilt-card reveal reveal-delay-2">
+                <div class="tilt-inner">
+                    <video src="static/videos/agent_vs_agent.mp4" muted loop playsinline preload="metadata"></video>
+                    <div class="play-hint" onclick="togglePlay(this)"><i class="fas fa-play"></i></div>
+                </div>
+                <p class="tilt-caption"><strong>Agent vs. Agent</strong>A full Werewolf game between CaM-Wolf agents, each presented through its own realistic talking avatar.</p>
+            </div>
+            <div class="tilt-card reveal reveal-delay-3">
+                <div class="tilt-inner">
+                    <video src="static/videos/agent_vs_agent_cartoon.mp4" muted loop playsinline preload="metadata"></video>
+                    <div class="play-hint" onclick="togglePlay(this)"><i class="fas fa-play"></i></div>
+                </div>
+                <p class="tilt-caption"><strong>Cartoon Avatars</strong>The same gameplay with stylized cartoon avatars — the avatar design is fully customizable.</p>
+            </div>
+        </div>
+    </div>
+</section>
+<section class="section" id="citation">
+    <div class="container">
+        <h2 class="section-title reveal">Citation</h2>
+        <div class="citation-block reveal">
+            <button class="copy-btn" onclick="copyBibtex()" title="Copy to clipboard">
+                <i class="fas fa-copy"></i>
+            </button>
+<pre id="bibtex">@inproceedings{zhang2026camwolf,
+    title={CaM-Wolf: Causal-Aware Multimodal Agents for Social Deduction Games},
+    author={Zhang, Zheng and Yao, Nanjie and He, Jiarui and Ye, Deheng and Zhao, Peilin and Wang, Hao},
+    booktitle={34th ACM International Conference on Multimedia},
+    year={2026},
+    url={https://openreview.net/forum?id=djnKfsiN3p}
+}</pre>
+        </div>
+    </div>
+</section>
+<footer class="footer">
+    <div class="container">
+        <p>CaM-Wolf &nbsp;·&nbsp; ACM MM 2026</p>
+    </div>
+</footer>
+
+<script>
+function copyBibtex() {
+    const text = document.getElementById('bibtex').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.querySelector('.copy-btn');
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i>'; }, 2000);
+    });
+}
+
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+        }
+    });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+const navbar = document.getElementById('navbar');
+window.addEventListener('scroll', () => {
+    if (window.pageYOffset > 80) {
+        navbar.classList.add('nav-scrolled');
+    } else {
+        navbar.classList.remove('nav-scrolled');
+    }
+});
+
+const sections = document.querySelectorAll('.section');
+const navLinks = document.querySelectorAll('.nav-link');
+const navObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            navLinks.forEach(link => link.classList.remove('active'));
+            const id = entry.target.getAttribute('id');
+            const activeLink = document.querySelector(`.nav-link[href="#${id}"]`);
+            if (activeLink) activeLink.classList.add('active');
+        }
+    });
+}, { threshold: 0.3, rootMargin: '-80px 0px -50% 0px' });
+
+sections.forEach(sec => navObserver.observe(sec));
+
+function togglePlay(hint) {
+    const video = hint.parentElement.querySelector('video');
+    if (video.paused) {
+        video.play();
+        hint.classList.add('hidden');
+    }
+}
+document.querySelectorAll('.tilt-inner video').forEach(video => {
+    video.addEventListener('click', () => {
+        if (!video.paused) {
+            video.pause();
+            const hint = video.parentElement.querySelector('.play-hint');
+            hint.classList.remove('hidden');
+        }
+    });
+});
+
+document.querySelectorAll('.tilt-card').forEach((card, idx) => {
+    const inner = card.querySelector('.tilt-inner');
+    let targetX = 0, targetY = 0, curX = 0, curY = 0;
+    let hovering = false;
+
+    card.addEventListener('mousemove', e => {
+        const r = card.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width;
+        const py = (e.clientY - r.top) / r.height;
+        targetY = (px - 0.5) * 14;   // rotateY
+        targetX = (0.5 - py) * 10;   // rotateX
+        inner.style.setProperty('--mx', `${px * 100}%`);
+        inner.style.setProperty('--my', `${py * 100}%`);
+        hovering = true;
+    });
+    card.addEventListener('mouseleave', () => {
+        hovering = false;
+        targetX = 0; targetY = 0;
+    });
+
+    function animate(t) {
+        if (!hovering) {
+            targetY = Math.sin(t / 2600 + idx * 1.7) * 5;
+            targetX = Math.cos(t / 3400 + idx * 2.1) * 3.5;
+        }
+        curX += (targetX - curX) * 0.08;
+        curY += (targetY - curY) * 0.08;
+        inner.style.transform =
+            `rotateX(${curX.toFixed(2)}deg) rotateY(${curY.toFixed(2)}deg)`;
+        requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+});
+
+(function() {
+    const canvas = document.getElementById('starry-bg');
+    const ctx = canvas.getContext('2d');
+    let width, height, stars, shootingStars;
+
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    }
+
+    function createStars(count) {
+        stars = [];
+        for (let i = 0; i < count; i++) {
+            stars.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                radius: Math.random() * 1.5 + 0.3,
+                opacity: Math.random() * 0.6 + 0.2,
+                twinkleSpeed: Math.random() * 0.02 + 0.005,
+                twinkleOffset: Math.random() * Math.PI * 2
+            });
+        }
+    }
+
+    function createShootingStars() {
+        shootingStars = [];
+    }
+
+    function maybeAddShootingStar() {
+        if (Math.random() < 0.002 && shootingStars.length < 2) {
+            shootingStars.push({
+                x: Math.random() * width * 0.8,
+                y: Math.random() * height * 0.4,
+                len: Math.random() * 60 + 40,
+                speed: Math.random() * 4 + 3,
+                opacity: 1,
+                angle: Math.PI / 4 + (Math.random() - 0.5) * 0.3
+            });
+        }
+    }
+
+    function draw(time) {
+        ctx.clearRect(0, 0, width, height);
+
+        stars.forEach(star => {
+            const twinkle = Math.sin(time * star.twinkleSpeed + star.twinkleOffset) * 0.3 + 0.7;
+            const alpha = star.opacity * twinkle;
+            ctx.beginPath();
+            ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(200, 210, 255, ${alpha})`;
+            ctx.fill();
+
+            if (star.radius > 1.2) {
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius * 3, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(180, 200, 255, ${alpha * 0.08})`;
+                ctx.fill();
+            }
+        });
+
+        maybeAddShootingStar();
+        shootingStars.forEach((s, i) => {
+            s.x += Math.cos(s.angle) * s.speed;
+            s.y += Math.sin(s.angle) * s.speed;
+            s.opacity -= 0.008;
+
+            if (s.opacity <= 0 || s.x > width || s.y > height) {
+                shootingStars.splice(i, 1);
+                return;
+            }
+
+            const tailX = s.x - Math.cos(s.angle) * s.len;
+            const tailY = s.y - Math.sin(s.angle) * s.len;
+            const gradient = ctx.createLinearGradient(tailX, tailY, s.x, s.y);
+            gradient.addColorStop(0, `rgba(200, 210, 255, 0)`);
+            gradient.addColorStop(1, `rgba(200, 210, 255, ${s.opacity * 0.6})`);
+
+            ctx.beginPath();
+            ctx.moveTo(tailX, tailY);
+            ctx.lineTo(s.x, s.y);
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+        });
+
+        requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('resize', () => {
+        resize();
+        createStars(180);
+    });
+
+    resize();
+    createStars(180);
+    createShootingStars();
+    requestAnimationFrame(draw);
+})();
+</script>
+
+</body>
+</html>

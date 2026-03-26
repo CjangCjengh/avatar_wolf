@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Werewolf Game</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", Arial, sans-serif; background: #f5f2ee; color: #222; }
+  #app { max-width: 860px; margin: 24px auto; padding: 0 16px; }
+  h1 { font-size: 20px; text-align: center; margin-bottom: 12px; color: #444; }
+  #header { text-align: center; font-size: 22px; font-weight: 600; margin: 12px 0 16px; color: #333; }
+  #header.your-turn { color: #c8401c; }
+  #setup { text-align: center; margin-top: 80px; }
+  #setup input, #setup select { font-size: 16px; padding: 8px 12px; margin: 6px; }
+  #setup button { font-size: 16px; padding: 10px 24px; cursor: pointer; }
+
+  #media-area { position: relative; width: 100%; background: #000; border-radius: 8px;
+    overflow: hidden; aspect-ratio: 4/3; display: flex; align-items: center; justify-content: center; }
+  #media-area video, #media-area img { width: 100%; height: 100%; object-fit: contain; }
+  #avatar-name { position: absolute; top: 10px; left: 12px; color: #fff;
+    background: rgba(0,0,0,.45); padding: 4px 10px; border-radius: 4px; font-size: 14px; }
+
+  #controls { display: flex; gap: 16px; justify-content: center; margin: 16px 0; }
+  #controls button { font-size: 16px; padding: 10px 28px; border: none; border-radius: 6px;
+    cursor: pointer; min-width: 170px; }
+  #btn-start { background: #9e9e9e; color: #fff; }
+  #btn-stop { background: #e53935; color: #fff; }
+  #btn-start:disabled, #btn-stop:disabled { opacity: .45; cursor: default; }
+
+  #chatlog { background: #fff; border: 1px solid #ddd; border-radius: 8px;
+    height: 300px; overflow-y: auto; padding: 14px 18px; margin: 12px 0; font-size: 15px; line-height: 1.55; }
+  #chatlog .moderator { color: #8b5a2b; font-weight: 600; }
+  #chatlog .p1 { color: #1a66cc; } #chatlog .p2 { color: #1c9c4b; }
+  #chatlog .p3 { color: #c8401c; } #chatlog .p4 { color: #8e24aa; }
+  #chatlog .p5 { color: #00838f; } #chatlog .p6 { color: #5d4037; }
+  #chatlog .p7 { color: #c0ca33; } #chatlog .me { color: #c8401c; font-weight: 600; }
+  #chatlog .phase-sep { text-align: center; color: #999; font-style: italic; margin: 8px 0; }
+
+  #input-row { display: flex; gap: 10px; }
+  #input-row input { flex: 1; font-size: 16px; padding: 12px; border: 2px solid #4caf50;
+    border-radius: 6px; outline: none; }
+  #input-row button { font-size: 16px; padding: 12px 28px; background: #4caf50;
+    color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+  #input-row button:disabled { opacity: .45; cursor: default; }
+  #status { text-align: center; color: #888; font-size: 13px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>Werewolf Game</h1>
+
+  <div id="setup">
+    <p style="margin-bottom:16px">CaM-Wolf: 1 human vs 6 AI agents</p>
+    <select id="mode">
+      <option value="text">Text-Text</option>
+      <option value="video">Video-Video</option>
+    </select>
+    <input id="backend" size="30" placeholder="backend URL (e.g. http://server:8600)">
+    <br>
+    <button onclick="startGame()">Start Game</button>
+  </div>
+
+  <div id="game" style="display:none">
+    <div id="header">Waiting for game to start...</div>
+
+    <div id="media-area" style="display:none">
+      <video id="webcam" autoplay muted playsinline style="display:none"></video>
+      <video id="player-video" playsinline style="display:none"></video>
+      <img id="avatar-img" style="display:none" alt="">
+      <audio id="player-audio"></audio>
+      <div id="avatar-name"></div>
+    </div>
+
+    <div id="controls" style="display:none">
+      <button id="btn-start" onclick="startRecording()">Start Recording</button>
+      <button id="btn-stop" onclick="stopRecording()" disabled>Stop Recording</button>
+    </div>
+
+    <div id="chatlog"></div>
+
+    <div id="input-row">
+      <input id="msg" placeholder="Type your message here..." disabled>
+      <button id="btn-send" onclick="sendText()" disabled>Send</button>
+    </div>
+    <div id="status"></div>
+  </div>
+</div>
+
+<script>
+let BACKEND = "", SID = "", MODE = "text", CURSOR = 0;
+let awaiting = null, mediaRecorder = null, chunks = [];
+let seenHistory = 0, playingTurn = null;
+
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+async function startGame() {
+  BACKEND = $("backend").value.replace(/\/+$/, "");
+  if (!BACKEND) { alert("Please enter the backend URL"); return; }
+  MODE = $("mode").value;
+  const resp = await fetch(`${BACKEND}/session/new`, {
+    method: "POST",
+    body: new URLSearchParams({mode: MODE})
+  });
+  const data = await resp.json();
+  SID = data.session_id;
+  $("setup").style.display = "none";
+  $("game").style.display = "block";
+  setHeader(`Game started. You are ${data.human_player} (${data.human_role})`, false);
+  poll();
+}
+
+function setHeader(text, yourTurn) {
+  $("header").textContent = text;
+  $("header").className = yourTurn ? "your-turn" : "";
+}
+
+async function poll() {
+  while (true) {
+    try {
+      const resp = await fetch(`${BACKEND}/session/${SID}/state?cursor=${CURSOR}`);
+      const st = await resp.json();
+      CURSOR = st.cursor;
+      renderHistory(st.human_history);
+      handleAwaiting(st);
+      handleAssets(st.assets);
+      if (st.game_over) {
+        setHeader(`Game over — ${st.winners.join(", ")} team wins!`, false);
+        disableInputs();
+        break;
+      }
+    } catch (e) { $("status").textContent = "connection error, retrying..."; }
+    await sleep(1500);
+  }
+}
+
+function renderHistory(history) {
+  const log = $("chatlog");
+  for (let i = seenHistory; i < history.length; i++) {
+    const h = history[i];
+    const div = document.createElement("div");
+    const m = h.message || "";
+    if (m.includes("phase") && h.name === "Host" && m.length < 60) {
+      div.className = "phase-sep"; div.textContent = `— ${m} —`;
+    } else {
+      const cls = h.name === "Host" ? "moderator"
+        : h.name.startsWith("player") ? "p" + h.name.slice(-1) : "";
+      const who = h.name === "Host" ? "Moderator" : h.name;
+      div.innerHTML = `<span class="${cls}">${who}:</span> `;
+      div.appendChild(document.createTextNode(m.split("\n(vision:")[0]));
+      if (h.name === window.myName) div.classList.add("me");
+    }
+    log.appendChild(div);
+  }
+  seenHistory = history.length;
+  log.scrollTop = log.scrollHeight;
+}
+
+function handleAwaiting(st) {
+  if (st.awaiting && !awaiting) {
+    awaiting = st.awaiting;
+    const isSpeak = st.awaiting.instruction.includes("your turn to speak");
+    if (isSpeak) {
+      setHeader(`Your turn to speak (${st.human_player}: ${st.human_role})`, true);
+    } else {
+      setHeader(`Your action: ${st.awaiting.instruction.slice(0, 90)}`, true);
+    }
+    if (MODE === "video" && isSpeak) {
+      showWebcam();
+    } else {
+      $("msg").disabled = false; $("btn-send").disabled = false;
+      $("msg").focus();
+    }
+  } else if (!st.awaiting && awaiting) {
+    awaiting = null;
+    disableInputs();
+  }
+  if (!st.awaiting && !st.game_over) {
+  }
+}
+
+function disableInputs() {
+  $("msg").disabled = true; $("btn-send").disabled = true;
+  $("btn-start").disabled = true; $("btn-stop").disabled = true;
+  $("controls").style.display = "none";
+}
+
+async function showWebcam() {
+  $("media-area").style.display = "flex";
+  $("controls").style.display = "flex";
+  $("webcam").style.display = "block";
+  $("player-video").style.display = "none";
+  $("avatar-img").style.display = "none";
+  $("avatar-name").textContent = "You";
+  const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+  $("webcam").srcObject = stream;
+  window._stream = stream;
+  $("btn-start").disabled = false;
+}
+
+function startRecording() {
+  chunks = [];
+  mediaRecorder = new MediaRecorder(window._stream, {mimeType: "video/webm"});
+  mediaRecorder.ondataavailable = e => chunks.push(e.data);
+  mediaRecorder.start();
+  $("btn-start").disabled = true; $("btn-stop").disabled = false;
+}
+
+async function stopRecording() {
+  $("btn-stop").disabled = true;
+  mediaRecorder.onstop = async () => {
+    const blob = new Blob(chunks, {type: "video/webm"});
+    const fd = new FormData();
+    fd.append("file", blob, "speech.webm");
+    $("status").textContent = "uploading and transcribing...";
+    await fetch(`${BACKEND}/session/${SID}/speak_video`, {method: "POST", body: fd});
+    $("status").textContent = "";
+    window._stream.getTracks().forEach(t => t.stop());
+    $("controls").style.display = "none";
+  };
+  mediaRecorder.stop();
+}
+
+async function sendText() {
+  const text = $("msg").value.trim();
+  if (!text) return;
+  $("msg").value = "";
+  await fetch(`${BACKEND}/session/${SID}/speak_text`, {
+    method: "POST", body: new URLSearchParams({text})
+  });
+}
+
+$("msg").addEventListener("keydown", e => { if (e.key === "Enter") sendText(); });
+
+async function handleAssets(assets) {
+  const turns = Object.keys(assets).sort();
+  for (const tid of turns) {
+    if (playingTurn === tid) continue;
+    const a = assets[tid];
+    if (a.audio) {
+      playingTurn = tid;
+      await playTurn(tid, a);
+      playingTurn = null;
+    }
+  }
+}
+
+async function playTurn(tid, a) {
+  if (awaiting) return;  // Don't interrupt the human's turn.
+  setHeader(`${a.player} is speaking`, false);
+  $("media-area").style.display = "flex";
+  $("webcam").style.display = "none";
+  $("avatar-name").textContent = a.player;
+  const img = $("avatar-img"), vid = $("player-video");
+  img.src = `${BACKEND}/assets/${SID}/avatars/${a.player}.png`;
+  img.style.display = "block";
+
+  if (a.video) {
+    vid.src = BACKEND + a.video;
+    vid.style.display = "block";
+    img.style.display = "none";
+    await vid.play().catch(() => {});
+    await new Promise(r => vid.onended = r);
+    return;
+  }
+  const audio = $("player-audio");
+  audio.src = BACKEND + a.audio;
+  await audio.play().catch(() => {});
+  await new Promise(r => audio.onended = r);
+}
+</script>
+</body>
+</html>
