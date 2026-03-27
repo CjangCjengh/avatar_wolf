@@ -1,6 +1,6 @@
 # CaM-Wolf
 
-[![Paper](https://img.shields.io/badge/Paper-ACM%20MM%202026-red)]() [![Project Page](https://img.shields.io/badge/Project%20Page-GitHub%20Pages-blue)](https://cjangcjengh.github.io/avatar_wolf/)
+[![Paper](https://img.shields.io/badge/Paper-ACM%20MM%202026-red)](https://openreview.net/forum?id=djnKfsiN3p) [![Project Page](https://img.shields.io/badge/Project%20Page-GitHub%20Pages-blue)](https://cjangcjengh.github.io/avatar_wolf/)
 
 ## Repository Structure
 
