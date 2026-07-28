@@ -823,12 +823,7 @@ h1, h2, .hero-title, .section-title, .nav-logo {
 
 .hero {
     background: linear-gradient(180deg, #081c19 0%, #0b1220 100%);
-    text-align: left;
-}
-
-.hero .container {
-    max-width: 880px;
-    margin-left: 6vw;
+    text-align: center;
 }
 
 .hero-moonlight {
@@ -848,3 +843,14 @@ h1, h2, .hero-title, .section-title, .nav-logo {
     .hero { text-align: center; }
     .hero .container { margin-left: auto; }
 }
+
+.hero-deco {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.28;
+    pointer-events: none;
+}
+.hero-deco.left  { left: 5vw; }
+.hero-deco.right { right: 5vw; transform: translateY(-50%) scaleX(-1); }
+@media (max-width: 900px) { .hero-deco { display: none; } }
