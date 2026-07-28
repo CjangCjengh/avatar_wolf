@@ -801,3 +801,97 @@ body {
         padding: 1.5rem;
     }
 }
+
+/* ==================== CaM-Wolf theme: moonlit night ==================== */
+:root {
+    --primary: #d97706;
+    --primary-dark: #b45309;
+    --primary-light: #fef3c7;
+    --accent: #f59e0b;
+    --accent-pink: #059669;
+    --accent-cyan: #34d399;
+    --shadow-glow: 0 0 30px rgba(217, 119, 6, 0.18);
+}
+
+body {
+    background: #07110f;
+}
+
+h1, h2, .hero-title, .section-title, .nav-logo {
+    font-family: 'Playfair Display', 'Inter', Georgia, serif;
+}
+
+.hero {
+    background: linear-gradient(180deg, #081c19 0%, #0b1220 100%);
+    text-align: left;
+}
+
+.hero .container {
+    max-width: 880px;
+    margin-left: 6vw;
+}
+
+.hero-moon {
+    position: absolute;
+    top: 6rem;
+    right: 8vw;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 34%, #fff8e1 0%, #fde68a 45%, #f5c96b 75%, #e8b04b 100%);
+    box-shadow: 0 0 60px rgba(253, 230, 138, 0.45),
+                0 0 160px rgba(253, 230, 138, 0.22),
+                inset -18px -14px 40px rgba(180, 120, 40, 0.35);
+    opacity: 0.95;
+}
+.hero-moon::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 62% 55%, rgba(180, 130, 60, 0.22) 0 12%, transparent 13%),
+        radial-gradient(circle at 40% 68%, rgba(180, 130, 60, 0.18) 0 9%, transparent 10%),
+        radial-gradient(circle at 55% 30%, rgba(180, 130, 60, 0.15) 0 7%, transparent 8%);
+}
+
+.hero-orb-1 { background: radial-gradient(circle, rgba(217, 119, 6, 0.35), transparent 70%); }
+.hero-orb-2 { background: radial-gradient(circle, rgba(5, 150, 105, 0.3), transparent 70%); }
+.hero-orb-3 { background: radial-gradient(circle, rgba(245, 158, 11, 0.25), transparent 70%); }
+
+.hero-title {
+    background: linear-gradient(120deg, #fff8e1 0%, #fde68a 45%, #f59e0b 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #d97706, #b45309);
+    box-shadow: 0 8px 30px rgba(217, 119, 6, 0.35);
+}
+.btn-primary:hover {
+    box-shadow: 0 12px 40px rgba(217, 119, 6, 0.5);
+}
+
+.section-title::after {
+    background: linear-gradient(90deg, #d97706, #059669);
+}
+
+.step-card:hover, .game-card:hover {
+    border-color: rgba(217, 119, 6, 0.5);
+    box-shadow: 0 20px 50px rgba(217, 119, 6, 0.12);
+}
+.step-number {
+    background: linear-gradient(135deg, #d97706, #059669);
+}
+
+.nav-link.active, .nav-link:hover {
+    color: #fbbf24;
+}
+
+@media (max-width: 768px) {
+    .hero-moon { width: 130px; height: 130px; top: 4.5rem; right: 6vw; }
+    .hero { text-align: center; }
+    .hero .container { margin-left: auto; }
+}
