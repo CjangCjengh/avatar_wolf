@@ -1,6 +1,8 @@
 # CaM-Wolf
 
-[![Paper](https://img.shields.io/badge/Paper-ACM%20MM%202026-red)](https://openreview.net/forum?id=djnKfsiN3p) [![Project Page](https://img.shields.io/badge/Project%20Page-GitHub%20Pages-blue)](https://cjangcjengh.github.io/avatar_wolf/)
+[![Accepted](https://img.shields.io/badge/Accepted%20by-ACM%20MM%202026-brightgreen)](https://openreview.net/forum?id=djnKfsiN3p) [![Paper](https://img.shields.io/badge/Paper-ACM%20MM%202026-red)](https://openreview.net/forum?id=djnKfsiN3p) [![Project Page](https://img.shields.io/badge/Project%20Page-GitHub%20Pages-blue)](https://cjangcjengh.github.io/avatar_wolf/)
+
+> 🎉 **News:** CaM-Wolf has been accepted to **ACM Multimedia 2026 (ACM MM '26)**!
 
 ## Repository Structure
 
